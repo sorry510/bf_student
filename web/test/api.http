@@ -1,0 +1,69 @@
+@host =  http://localhost:2222
+@token = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6ImFkbWluIiwicm9sZV9pZCI6MSwiaWF0IjoxNjQ0NjQzNTU1LCJleHAiOjE2NDcyMzU1NTV9.wCE4lAJIfFjYmWg0l8MtMn54bzFLlSBJQOvEapGZGIw
+
+### login
+POST {{host}}/login HTTP/1.1
+content-type: application/json
+
+{
+    "username": "admin",
+    "password": "123456"
+}
+
+### get user
+GET {{host}}/user/info HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
+
+
+### get users
+GET {{host}}/users HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
+
+
+### get students
+GET {{host}}/students?page=1&page_size=2&search=te&sort=id+ HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
+
+### excel
+GET {{host}}/students/excel HTTP/1.1
+Authorization: {{token}}
+
+
+### create student
+POST {{host}}/students HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
+
+{
+    "name": "张三",
+    "sex": 2,
+    "wx": "wx_222",
+    "phone": "13700233942",
+    "class_type": 2,
+    "source": 3,
+    "remarks": "",
+    "effective": 0
+}
+
+### update student
+PUT {{host}}/students/1 HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
+
+{
+    "name": "test",
+    "sex": 1,
+    "wx": "wx_xxe",
+    "phone": "13700233942",
+    "class_type": 1,
+    "source": 1,
+    "remarks": "",
+    "effective": 1
+}
+
+### del student
+DELETE {{host}}/students/1 HTTP/1.1
+Authorization: {{token}}
