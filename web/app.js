@@ -136,52 +136,52 @@ app.get('/users', async (req, res) => {
   res.json(resJson(200, users))
 })
 
-// 新增用户
-app.post('/users', async (req, res) => {
-  const { body, user } = req
-  const data = {
-    ...body,
-    create_time: dateFormat(),
-    update_time: dateFormat(),
-  }
-  if (isSuperAdmin(user)) {
-    const result = await knex('admin').insert(data)
-    res.json(resJson(200))
-  }
-  res.json(resJson(401, '没有权限'))
-})
+// // 新增用户
+// app.post('/users', async (req, res) => {
+//   const { body, user } = req
+//   const data = {
+//     ...body,
+//     create_time: dateFormat(),
+//     update_time: dateFormat(),
+//   }
+//   if (isSuperAdmin(user)) {
+//     const result = await knex('admin').insert(data)
+//     res.json(resJson(200))
+//   }
+//   res.json(resJson(401, '没有权限'))
+// })
 
-// 修改用户
-app.put('/users/:id', async (req, res) => {
-  const {
-    body,
-    params: { id },
-    user,
-  } = req
-  const data = {
-    ...body,
-    create_time: dateFormat(),
-    update_time: dateFormat(),
-  }
-  if (isSuperAdmin(user)) {
-    const result = await knex('admin').where('id', id).update(data)
-    res.json(resJson(200))
-  }
-  res.json(resJson(401, '没有权限'))
-})
+// // 修改用户
+// app.put('/users/:id', async (req, res) => {
+//   const {
+//     body,
+//     params: { id },
+//     user,
+//   } = req
+//   const data = {
+//     ...body,
+//     create_time: dateFormat(),
+//     update_time: dateFormat(),
+//   }
+//   if (isSuperAdmin(user)) {
+//     const result = await knex('admin').where('id', id).update(data)
+//     res.json(resJson(200))
+//   }
+//   res.json(resJson(401, '没有权限'))
+// })
 
-// 删除用户
-app.delete('/users/:id', async (req, res) => {
-  const {
-    params: { id },
-    user,
-  } = req
-  if (isSuperAdmin(user)) {
-    const result = await knex('admin').where('id', id).delete()
-    res.json(resJson(200))
-  }
-  res.json(resJson(401, '没有权限'))
-})
+// // 删除用户
+// app.delete('/users/:id', async (req, res) => {
+//   const {
+//     params: { id },
+//     user,
+//   } = req
+//   if (isSuperAdmin(user)) {
+//     const result = await knex('admin').where('id', id).delete()
+//     res.json(resJson(200))
+//   }
+//   res.json(resJson(401, '没有权限'))
+// })
 
 // 获取所有学生
 app.get('/students', async (req, res) => {
@@ -230,6 +230,7 @@ app.get('/students', async (req, res) => {
     if (userId) {
       query.where('user_id', userId)
     }
+    query.whereNull('delete_time') // 没有删除的
   }
   const students = await knex
     .table('student')
@@ -289,6 +290,7 @@ app.get('/students/excel', async (req, res) => {
     if (userId) {
       query.where('user_id', userId)
     }
+    query.whereNull('delete_time')
   }
   const students = await knex
     .table('student')
@@ -297,7 +299,7 @@ app.get('/students/excel', async (req, res) => {
     .select('name', 'sex', 'wx', 'phone', 'class_type', 'source', 'remarks', 'effective', 'user_name', 'create_time')
   const sourceTexts = ['未知', '小红书', 'b站', '抖音', '知乎', '百度贴吧', '百度', '转介绍', '其它']
   const excelData = []
-  const title = ['姓名', '性别', '微信号', '电话', '课程', '来源', '备注', '是否有效', '录入人', '录入时间'] //这是第一行
+  const title = ['姓名', '性别', '微信号', '电话', '课程', '来源', '备注', '是否成交', '业务老师', '录入时间'] //这是第一行
   excelData.push(title)
   students.forEach(student => {
     const line = []
@@ -323,22 +325,30 @@ app.get('/students/excel', async (req, res) => {
 app.post('/students', async (req, res) => {
   const { body, user } = req
 
-  const student = await knex('student').where('wx', body.wx).first()
-  if (student) {
-    res.json(resJson(101, '不能重复录入'))
-  } else {
-    const data = {
-      ...body,
-      effective: 2,
-      user_id: body.user_id ? body.user_id : user.id,
-      user_name: body.user_name ? body.user_name : user.nickname,
-      create_time: dateFormat(),
-      update_time: dateFormat(),
+  if (body.wx) {
+    const student = await knex('student').where('wx', body.wx).whereNull('delete_time').first()
+    if (student) {
+      res.json(resJson(101, '微信号重复，不能录入'))
     }
-
-    const result = await knex('student').insert(data)
-    res.json(resJson(200))
   }
+  if (body.phone) {
+    const student = await knex('student').where('phone', body.phone).whereNull('delete_time').first()
+    if (student) {
+      res.json(resJson(101, '手机号重复，不能录入'))
+    }
+  }
+
+  const data = {
+    ...body,
+    effective: 2,
+    user_id: body.user_id ? body.user_id : user.id,
+    user_name: body.user_name ? body.user_name : user.nickname,
+    create_time: dateFormat(),
+    update_time: dateFormat(),
+  }
+
+  const result = await knex('student').insert(data)
+  res.json(resJson(200))
 })
 
 // 修改学生
@@ -349,7 +359,7 @@ app.put('/students/:id', async (req, res) => {
     params: { id },
   } = req
 
-  const student = await knex('student').where('id', id).first()
+  const student = await knex('student').where('id', id).whereNull('delete_time').first()
   if (student) {
     // if (isSuperAdmin(user) || student.user_id === user.id) {
     if (isSuperAdmin(user)) {
@@ -359,6 +369,7 @@ app.put('/students/:id', async (req, res) => {
       }
       const result = await knex('student').where('id', id).update(data)
       res.json(resJson(200))
+      return
     }
   }
   res.json(resJson(401, '没有权限'))
@@ -372,7 +383,7 @@ app.put('/students/:id/effective', async (req, res) => {
     params: { id },
   } = req
 
-  const student = await knex('student').where('id', id).first()
+  const student = await knex('student').where('id', id).whereNull('delete_time').first()
   if (student) {
     if (isSuperAdmin(user) || student.user_id === user.id) {
       const data = {
@@ -382,6 +393,7 @@ app.put('/students/:id/effective', async (req, res) => {
       }
       const result = await knex('student').where('id', id).update(data)
       res.json(resJson(200))
+      return
     }
   }
   res.json(resJson(401, '没有权限'))
@@ -393,12 +405,13 @@ app.delete('/students/:id', async (req, res) => {
     user,
     params: { id },
   } = req
-  const student = await knex('student').where('id', id).first()
+  const student = await knex('student').where('id', id).whereNull('delete_time').first()
   if (student) {
     // if (isSuperAdmin(user) || student.user_id === user.id) {
     if (isSuperAdmin(user)) {
-      const result = await knex('student').where('id', id).del()
+      const result = await knex('student').where('id', id).update({ delete_time: dateFormat() })
       res.json(resJson(200))
+      return
     }
   }
   res.json(resJson(401, '没有权限'))
