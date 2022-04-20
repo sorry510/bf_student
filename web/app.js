@@ -102,7 +102,7 @@ app.post('/login', async (req, res) => {
 // 获取当前用户信息
 app.get('/user/info', async (req, res) => {
   const { user } = req
-  const userInfo = await knex.table('admin').where('id', user.id).first('id', 'name', 'role_id')
+  const userInfo = await knex.table('admin').where('id', user.id).first('id', 'name', 'nickname', 'role_id')
   res.json(resJson(200, userInfo))
 })
 
