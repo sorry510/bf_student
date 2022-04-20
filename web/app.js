@@ -362,6 +362,10 @@ app.put('/students/:id', async (req, res) => {
   const student = await knex('student').where('id', id).whereNull('delete_time').first()
   if (student) {
     if (isManager(user)) {
+      delete body.wx
+      delete body.user_id
+      delete body.user_name
+      delete body.source
       const data = {
         ...body,
         update_time: dateFormat(),
