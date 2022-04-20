@@ -9,7 +9,7 @@ const { exit } = require('process')
 
 const { knex } = require('../db')
 const { web } = require('../config.js')
-const { resJson, isSuperAdmin } = require('./utils')
+const { resJson, isSuperAdmin, isManager } = require('./utils')
 const { dateFormat, transformTime } = require('../utils')
 const currentDir = path.dirname(__filename)
 const webIndex = '/'
@@ -348,7 +348,7 @@ app.post('/students', async (req, res) => {
   }
 
   const result = await knex('student').insert(data)
-  res.json(resJson(200))
+  res.json(resJson(200, '新增成功'))
 })
 
 // 修改学生
@@ -361,14 +361,13 @@ app.put('/students/:id', async (req, res) => {
 
   const student = await knex('student').where('id', id).whereNull('delete_time').first()
   if (student) {
-    // if (isSuperAdmin(user) || student.user_id === user.id) {
-    if (isSuperAdmin(user)) {
+    if (isManager(user)) {
       const data = {
         ...body,
         update_time: dateFormat(),
       }
       const result = await knex('student').where('id', id).update(data)
-      res.json(resJson(200))
+      res.json(resJson(200, '修改成功'))
       return
     }
   }
@@ -385,7 +384,7 @@ app.put('/students/:id/effective', async (req, res) => {
 
   const student = await knex('student').where('id', id).whereNull('delete_time').first()
   if (student) {
-    if (isSuperAdmin(user) || student.user_id === user.id) {
+    if (isManager(user)) {
       const data = {
         effective: body.effective,
         remarks: body.remarks,
